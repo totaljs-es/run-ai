@@ -21,6 +21,27 @@ Native AI libraries such as `onnxruntime-node` are linked against glibc and have
 - Python 3 with `pip` and `venv`
 - `git`, `curl` and CA certificates
 
+## GPU image (NVIDIA)
+
+For applications that use the GPU there is a second image, built from `Dockerfile.gpu` on top of the NVIDIA CUDA runtime with cuDNN (CUDA 12.9 by default, `linux/amd64`). It has the same tools and the same start command.
+
+```yaml
+services:
+  main_app:
+    image: ghcr.io/totaljs-es/run-ai-gpu:npm
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+```
+
+The server needs an NVIDIA GPU, the NVIDIA driver and the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html). To use another CUDA version, build with `--build-arg CUDA_VERSION=13.4.3`.
+
+This image is for NVIDIA GPUs on `x86_64` servers and workstations. It does not target the Jetson boards, which need NVIDIA's own L4T base images.
+
 ## Updates
 
 The image is rebuilt on every change of the `Dockerfile` and every Monday, so the security updates of the base image are included. The Node.js major version is pinned in the `Dockerfile`: a rebuild never changes it by surprise.
@@ -29,4 +50,5 @@ After a new image is published, pull it on the server and recreate the applicati
 
 ```bash
 docker pull ghcr.io/totaljs-es/run-ai:npm
+docker pull ghcr.io/totaljs-es/run-ai-gpu:npm
 ```

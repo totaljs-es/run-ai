@@ -1,0 +1,54 @@
+# Total.js runtime for AI and voice apps (NVIDIA GPU)
+#
+# The same runtime as the CPU image (see Dockerfile) on top of the NVIDIA CUDA
+# runtime with cuDNN, for applications that use the GPU (ONNX Runtime, models, ...).
+#
+# Requirements on the server: an NVIDIA GPU, the NVIDIA driver and the
+# NVIDIA Container Toolkit. See the README for the index.yaml.
+#
+# CUDA 12.x is the default because it supports more GPU generations than CUDA 13
+# and the native AI libraries usually ship their binaries for it first. Change the
+# version with: docker build --build-arg CUDA_VERSION=13.4.3 .
+
+ARG CUDA_VERSION=12.9.2
+
+# Node.js comes from the official image and is pinned on purpose: a rebuild never
+# moves the applications to another major version by surprise.
+FROM node:24-slim AS node
+
+FROM nvidia/cuda:${CUDA_VERSION}-cudnn-runtime-ubuntu22.04
+
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+	&& ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+	&& node --version && npm --version
+
+# The same tools as the CPU image
+RUN export DEBIAN_FRONTEND=noninteractive \
+	&& apt-get update && apt-get install -y --no-install-recommends \
+	bash \
+	zip \
+	unzip \
+	tar \
+	graphicsmagick \
+	tini \
+	ffmpeg \
+	libsndfile1 \
+	python3 \
+	python3-pip \
+	python3-venv \
+	git \
+	curl \
+	ca-certificates \
+	&& rm -rf /var/lib/apt/lists/*
+
+# Both tini paths work (/sbin for totaljs/run, /usr/bin for Debian and Ubuntu)
+RUN ln -sf /usr/bin/tini /sbin/tini
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
+WORKDIR /www
+
+EXPOSE 8000
+
+CMD [ "/bin/bash", "-c", "mkdir -p logs;npm i;npm start > logs/debug.log 2>&1" ]
