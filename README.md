@@ -9,6 +9,15 @@ services:
     image: ghcr.io/totaljs-es/run-ai:npm
 ```
 
+## Images and platforms
+
+| Image | Platforms | For |
+|---|---|---|
+| `ghcr.io/totaljs-es/run-ai:npm` | `linux/amd64`, `linux/arm64` | AI and voice applications on the CPU |
+| `ghcr.io/totaljs-es/run-ai-gpu:npm` | `linux/amd64` | Applications that use an NVIDIA GPU (CUDA) |
+
+There is no image for the NVIDIA Jetson boards yet: they are ARM and need the L4T base images of NVIDIA, and the oldest boards (Jetson Nano with JetPack 4) have a system too old for the Node.js version of these images. If you need it, open an issue with your board and JetPack version.
+
 ## Why Debian (glibc)
 
 Native AI libraries such as `onnxruntime-node` are linked against glibc and have no musl build, so they cannot run on the Alpine image. This image keeps the same tools as `totaljs/run` and adds the tools used by AI and voice applications.
